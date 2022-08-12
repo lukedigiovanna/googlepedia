@@ -1,0 +1,5 @@
+CREATE TABLE webpage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url TEXT NOT NULL,
+    title TEXT NOT NULL,
+);
