@@ -19,6 +19,8 @@ app.get('/api/search', async (req, res) => {
             }
         }
     });
+    // await prisma.$queryRaw(`SELECT * FROM User WHERE SIMILARITY(lastName, '${searchString}') > 0.45;` as TemplateStringsArray)
+
     res.send(results);
 });
 
