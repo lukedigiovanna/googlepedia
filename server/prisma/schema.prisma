@@ -9,7 +9,8 @@ datasource db {
 }
 
 model webpage {
-  id    Int    @id @default(autoincrement())
-  url   String @db.VarChar(255)
-  title String @db.VarChar(255)
+  id      Int    @id @default(autoincrement())
+  url     String @unique
+  title   String
+  content String
 }

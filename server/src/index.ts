@@ -12,16 +12,27 @@ app.use(express.static(__dirname + '/public'));
 app.get('/api/search', async (req, res) => {
     const searchTerm: string = req.query.term as string;
     // perform a search on the database.
-    const results = await prisma.webpage.findMany({
-        where: {
-            title: {
-                search: searchTerm
+    try {
+        const results = await prisma.webpage.findMany({
+            take: 50,
+            where: {
+                title: {
+                    search: searchTerm.split(" ").join(" | ")
+                },
+                content: {
+                    search: searchTerm.split(" ").join(" & ")
+                }
             }
-        }
-    });
-    // await prisma.$queryRaw(`SELECT * FROM User WHERE SIMILARITY(lastName, '${searchString}') > 0.45;` as TemplateStringsArray)
-
-    res.send(results);
+        });
+        
+        res.send(results);
+    }
+    catch (e) {
+        res.status(500).send({
+            message: "Something went wrong",
+        });
+        console.log(e);
+    }
 });
 
 app.get('/*', function (req, res) {
@@ -29,6 +40,8 @@ app.get('/*', function (req, res) {
 });
 
 
-app.listen(4000, () => {
-    console.log('Server is running on port 4000');
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });

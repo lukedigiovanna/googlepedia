@@ -1,4 +1,4 @@
-lockfileVersion: 5.3
+lockfileVersion: 5.4
 
 specifiers:
   '@prisma/client': ^4.2.1
@@ -18,7 +18,7 @@ dependencies:
   axios: 0.27.2
   node-html-parser: 5.4.1
   prisma: 4.2.1
-  ts-node: 10.9.1_591fffec868aed0fa8fffb4d4978119d
+  ts-node: 10.9.1_lep773egrlwq7kh77ngus6artu
   typescript: 4.7.4
   underscore: 1.13.4
 
@@ -255,7 +255,7 @@ packages:
       '@prisma/engines': 4.2.1
     dev: false
 
-  /ts-node/10.9.1_591fffec868aed0fa8fffb4d4978119d:
+  /ts-node/10.9.1_lep773egrlwq7kh77ngus6artu:
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
     hasBin: true
     peerDependencies:

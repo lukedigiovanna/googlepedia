@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 const Logo = styled.img`
-    width: 500px;
+    width: 400px;
     margin-bottom: 50px;
 
     @media (max-width: 750px) {
@@ -14,7 +14,7 @@ const Logo = styled.img`
 
 const MainContainer = styled.div`
     display: flex;
-    margin-top: 200px;
+    margin-top: 100px;
     flex-direction: column;
     align-items: center;
 `
@@ -47,7 +47,11 @@ const SearchPage = () => {
         <MainContainer>
             <Logo src={require("../assets/logo.png")} />
             <SearchArea>
-                <SearchInput onChange={e => setSearch(e.target.value)} />
+                <SearchInput onChange={e => setSearch(e.target.value)} onKeyDown={e => {
+                    if (search.length !== 0 && e.key === 'Enter') {
+                        navigate(`/search?term=${search}`);
+                    }
+                }} />
                 <SearchButton onClick={() => {navigate(`/search?term=${search}`)}} disabled={search.length === 0}>Search</SearchButton>
             </SearchArea>
         </MainContainer>
