@@ -13,6 +13,7 @@ interface ScrapeResult {
     title: string;
     content: string;
     links: Set<string>; // set of all unique URLs found on the page
+    linkCount: number
 }
 
 const constructBody = (bodyTags: any[], body: string) => {
@@ -58,7 +59,8 @@ const parseWebpage = async (url: string): Promise<ScrapeResult | null> => {
             url,
             title,
             content,
-            links
+            links,
+            linkCount: 0
         };
         return result;
     }
@@ -69,12 +71,14 @@ const parseWebpage = async (url: string): Promise<ScrapeResult | null> => {
 
 const parseWikipedia = async (title: string): Promise<ScrapeResult | null> => {
     try {
-        const response = await axios.get(`https://en.wikipedia.org/w/api.php?action=parse&page=${title}&prop=text&format=json`);
-        const html = response.data.parse.text['*'];
+        const wikiResponse = await axios.get(`https://en.wikipedia.org/w/api.php?action=parse&page=${title}&prop=text&format=json`);
+        const linkCountResponse = await axios.get(`https://linkcount.toolforge.org/api/?page=${title}&project=en.wikipedia.org&namespaces=0`);
+        const linkCount = linkCountResponse.data.wikilinks.all;
+        const html = wikiResponse.data.parse.text['*'];
         const root = parse(html);
         const allLinks = root.querySelectorAll('a')?.map(a => a.getAttribute('href'));
         const links = new Set<string>();
-        const content = constructBody(root.childNodes, "");
+        const content = constructBody(root.childNodes, "").replaceAll(/\[[0-9]+\]/g,"");
         for (const link of allLinks) {
             // starts with wiki and has no colons.
             if (link?.startsWith('/wiki/') && !/(.*):(.*)/.test(link)) {
@@ -83,9 +87,10 @@ const parseWikipedia = async (title: string): Promise<ScrapeResult | null> => {
         }
         return {
             url: `https://en.wikipedia.org/wiki/${title}`,
-            title: response.data.parse.title,
+            title: wikiResponse.data.parse.title,
             content: content.replace(/^\s+/g, ''),
-            links
+            links,
+            linkCount
         }
     }
     catch (e) {
@@ -112,9 +117,9 @@ const parseWikipedia = async (title: string): Promise<ScrapeResult | null> => {
         }
         // Mark the URL as visited
         visited.add(url);
-        console.log("Crawling: " + url);
         const result = await parseWikipedia(url);
         if (result && !result.content.match(/Redirect to:/)) {
+            console.log(`Parsed ${result.title} with ${result.linkCount} inbound links`);
             // Add two random links to the queue.
             const links = Array.from(result.links);
             const randomLinks = _.sample(links, 2);
@@ -127,7 +132,8 @@ const parseWikipedia = async (title: string): Promise<ScrapeResult | null> => {
                     data: {
                         url: result.url,
                         title: result.title,
-                        content: result.content
+                        content: result.content,
+                        incoming_links: result.linkCount
                     }
                 })
             }
