@@ -10,11 +10,22 @@ const prisma = new PrismaClient();
 app.use(express.static(__dirname + '/public'));
 
 app.get('/api/search', async (req, res) => {
+    // extract search term from the request
     const searchTerm: string = req.query.term as string;
+    // check for offset field
+    const offset: number = req.query.offset ? parseInt(req.query.offset as string) : 0;
     // perform a search on the database.
     try {
+        const startTime = Date.now();
+        // generate a SQL query to search for the search term.
         const results = await prisma.webpage.findMany({
-            take: 50,
+            // take: 50,
+            skip: offset,
+            // orderBy: [
+            //     {
+            //         incoming_links: 'desc'
+            //     }
+            // ],
             where: {
                 title: {
                     search: searchTerm.split(" ").join(" | ")
@@ -24,8 +35,13 @@ app.get('/api/search', async (req, res) => {
                 }
             }
         });
+
+        const time = Date.now() - startTime;
         
-        res.send(results);
+        res.send({
+            time, // given in milliseconds
+            results
+        });
     }
     catch (e) {
         res.status(500).send({
@@ -40,7 +56,7 @@ app.get('/*', function (req, res) {
 });
 
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

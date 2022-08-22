@@ -98,19 +98,27 @@ const Subheader = styled.p`
     margin: 4px;
 `
 
+type LoadingState = "loading" | "success" | "error";
+
 const SearchResultsPage = () => {
     const search = useLocation().search;
     const name: string = new URLSearchParams(search).get("term") as string;
     const [results, setResults] = useState([]);
+    const [loadTime, setLoadTime] = useState(0);
     const [searchTerm, setSearchTerm] = useState<string>(name);
+    const [state, setState] = useState<string>("loading");
 
     const navigate = useNavigate();
 
     useEffect(() => {
         // perform search on the API to get results
-        axios.get(`/api/search?term=${name}`).then(res => {
+        axios.get(`http://localhost:4000/api/search?term=${name}`).then(res => {
             console.log(res.data);
-            setResults(res.data);
+            setResults(res.data.results);
+            setState("success");
+            setLoadTime(res.data.time);
+        }).catch(err => {
+            setState("error");
         });
     }, [name]);
 
@@ -123,32 +131,43 @@ const SearchResultsPage = () => {
                     <SearchButton onClick={() => {navigate(`/search?term=${searchTerm}`)}}> Search </SearchButton>
                 </NavbarContent>
             </Navbar>
-            <SearchResults>
-                <Subheader>
-                    Here are the top results for <strong>{name}</strong>
-                </Subheader>
-                <>
-                    {
-                        results.length === 0 && (
-                            <Message>No results found</Message>
-                        )
-                    }
-                    {
-                        results.length > 0 && (
-                            <Message> Found {results.length} results </Message>
-                        )
-                    }
-                    {results.map((result: any) => (
-                        <SearchResult key={result.id}>
-                            <SearchResultLink href={result.url}>{result.title}</SearchResultLink>
-                            <SearchResultURL>{result.url}</SearchResultURL>
-                            <SearchDescription>
-                                {result.content.replaceAll(/\[[0-9]+\]/g,"")}
-                            </SearchDescription>
-                        </SearchResult>
-                    ))}
-                </>
-            </SearchResults>
+            {
+                state === "loading" &&
+                    <Message>Loading...</Message>
+            }
+            {
+                state === "error" && 
+                    <Message>An error has occurred</Message>
+            }
+            {
+                state === "success" &&
+                <SearchResults>
+                    <Subheader>
+                        Here are the top results for <strong>{name}</strong>
+                    </Subheader>
+                    <>
+                        {
+                            results.length === 0 && (
+                                <Message>No results found</Message>
+                            )
+                        }
+                        {
+                            results.length > 0 && (
+                                <Message> Found {results.length} results in {Math.round(loadTime / 100) / 10} seconds </Message>
+                            )
+                        }
+                        {results.map((result: any) => (
+                            <SearchResult key={result.id}>
+                                <SearchResultLink href={result.url}>{result.title}</SearchResultLink>
+                                <SearchResultURL>{result.url}</SearchResultURL>
+                                <SearchDescription>
+                                    {result.content}
+                                </SearchDescription>
+                            </SearchResult>
+                        ))}
+                    </>
+                </SearchResults>
+            }
         </Content>
     )
 }

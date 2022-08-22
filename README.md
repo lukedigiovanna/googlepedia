@@ -4,6 +4,8 @@ Search engines are ubiquitous in daily life. We use them constantly throughout t
 
 To demystify the beauty of search engines, I'm going to walk you through how I created my own, albeit simple and limited, search engine.
 
+<i> <b>Note</b>: This is not a tutorial! I will not walk through all the individual steps and code snippets such as setting up a database or instantiating an express server. </i>
+
 ## The Core Components
 
 A search engine such as Google essentially works by collecting billions of pages on the internet and storing them in something called an index. Then, when a user makes a search using some string of terms, that query is matched against the pages in the database and subsequently ranked by relevance (Google uses a very popular algorithm called PageRank for this step). So, to make a search engine there are three main tasks we need to accomplish.
@@ -132,3 +134,58 @@ while (queue.length > 0) {
     }
 }
 ```
+
+#### Running it
+
+Although I could use this against the actual web, to accomodate my desired scale I will not. Instead, I will
+just run this crawler on exclusively Wikipedia articles. Additionally, I will count the number of incoming links to an
+article (from other articles) in order to rank relevance later.
+
+I let my crawler run for an entire day and collected over 50,000 random articles into my database.
+
+## API, Querying, Ranking
+
+Now comes the part of actually using this data to perform a search. We'll set up a simple HTTP server using express to receive queries and return the results.
+
+#### Setting up the endpoint
+
+The endpoint to receieve a query is easily set up as follows:
+
+```TypeScript
+app.get('/api/search', async (req, res) => {
+    // extract search term from the request
+    const searchTerm: string = req.query.term as string;
+    // check for offset field
+    const offset: number = req.query.offset ? parseInt(req.query.offset as string) : 0;
+    // perform a search on the database.
+    try {
+        // generate a SQL query to search for the search term.
+        const results = await prisma.webpage.findMany({
+            take: 50,
+            skip: offset,
+            orderBy: [
+                {
+                    incoming_links: 'desc'
+                }
+            ],
+            where: {
+                title: {
+                    search: searchTerm.split(" ").join(" | ")
+                },
+                content: {
+                    search: searchTerm.split(" ").join(" & ")
+                }
+            }
+        });
+        
+        res.send(results);
+    }
+    catch (e) {
+        res.status(500).send({
+            message: "Something went wrong",
+        });
+        console.log(e);
+    }
+});
+```
+
