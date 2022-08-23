@@ -18,23 +18,31 @@ app.get('/api/search', async (req, res) => {
     try {
         const startTime = Date.now();
         // generate a SQL query to search for the search term.
-        const results = await prisma.webpage.findMany({
-            // take: 50,
-            skip: offset,
-            // orderBy: [
-            //     {
-            //         incoming_links: 'desc'
-            //     }
-            // ],
-            where: {
-                title: {
-                    search: searchTerm.split(" ").join(" | ")
-                },
-                content: {
-                    search: searchTerm.split(" ").join(" & ")
-                }
-            }
-        });
+        // const results = await prisma.webpage.findMany({
+        //     // take: 50,
+        //     skip: offset,
+        //     // orderBy: [
+        //     //     {
+        //     //         incoming_links: 'desc'
+        //     //     }
+        //     // ],
+        //     where: {
+        //         title: {
+        //             search: searchTerm.split(" ").join(" | ")
+        //         },
+        //         content: {
+        //             search: searchTerm.split(" ").join(" & ")
+        //         }
+        //     }
+        // });
+        // use raw SQL query to make use of the index.
+        const results = await prisma.$queryRaw`
+            SELECT * FROM webpage 
+            WHERE 
+                to_tsvector('english', title) @@ to_tsquery('english', ${searchTerm.split(" ").join(" & ")}) OR
+                to_tsvector('english', content) @@ to_tsquery('english', ${searchTerm.split(" ").join(" & ")})
+            ORDER BY incoming_links DESC
+            LIMIT 50;`;
 
         const time = Date.now() - startTime;
         
